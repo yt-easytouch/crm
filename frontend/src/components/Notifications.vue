@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/no-v-html -->
 <template>
   <div
     v-if="visible"
@@ -26,9 +27,9 @@
         </div>
       </div>
       <TabButtons
+        v-model="activeTab"
         :buttons="tabs"
         class="flex px-4 py-0.5 [&_button]:w-full [&_div]:w-full"
-        v-model="activeTab"
       />
       <div v-if="activeTab == 'all'" class="flex h-full">
         <div
@@ -51,7 +52,10 @@
               <UserAvatar v-else :user="n.from_user.name" size="lg" />
             </div>
             <div>
-              <div v-if="n.notification_text" v-html="n.notification_text" />
+              <div
+                v-if="n.notification_text"
+                v-html="sanitizeHTML(n.notification_text)"
+              />
               <div v-else class="mb-2 space-x-1 leading-5 text-ink-gray-5">
                 <span class="font-medium text-ink-gray-9">
                   {{ n.from_user.full_name }}
@@ -69,15 +73,13 @@
             </div>
           </RouterLink>
         </div>
-        <div
+        <EmptyState
           v-else
-          class="flex flex-1 flex-col items-center justify-center gap-2"
-        >
-          <NotificationsIcon class="h-20 w-20 text-ink-gray-2" />
-          <div class="text-lg font-medium text-ink-gray-4">
-            {{ __('No new notifications') }}
-          </div>
-        </div>
+          title="No New Notifications"
+          description="You have no new notifications"
+          :icon="NotificationsIcon"
+          width="lg"
+        />
       </div>
       <div v-else-if="activeTab == 'events'" class="flex h-full">
         <EventNotificationsArea />
@@ -91,6 +93,7 @@ import WhatsAppIcon from '@/components/Icons/WhatsAppIcon.vue'
 import MarkAsDoneIcon from '@/components/Icons/MarkAsDoneIcon.vue'
 import NotificationsIcon from '@/components/Icons/NotificationsIcon.vue'
 import EventNotificationsArea from '@/components/EventNotificationsArea.vue'
+import EmptyState from '@/components/ListViews/EmptyState.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import {
   visible,
@@ -99,17 +102,18 @@ import {
 } from '@/stores/notifications'
 import { useEventNotificationAlert } from '@/data/notifications'
 import { globalStore } from '@/stores/global'
-import { timeAgo } from '@/utils'
+import { timeAgo, sanitizeHTML } from '@/utils'
 import { onClickOutside } from '@vueuse/core'
-import { capture } from '@/telemetry'
+import { useTelemetry } from 'frappe-ui/frappe'
 import { TabButtons } from 'frappe-ui'
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 const { $socket } = globalStore()
 const { mark_as_read, toggle, mark_doc_as_read } = notificationsStore()
 const { handleEventNotification } = useEventNotificationAlert()
+const { capture } = useTelemetry()
 
-const activeTab = ref('events')
+const activeTab = ref('all')
 const tabs = [
   { label: __('All'), value: 'all' },
   { label: __('Events'), value: 'events' },

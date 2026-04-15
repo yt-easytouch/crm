@@ -72,7 +72,7 @@ export function getScript(doctype, view = 'Form') {
           let parentInstance = null
           let doctypeName = doctype.replace(/\s+/g, '')
 
-          let { doctypeMeta } = getMeta(doctype)
+          let { doctypesMeta } = getMeta(doctype)
 
           // if className is not doctype name, then it is a child doctype
           let isChildDoctype = className !== doctypeName
@@ -94,7 +94,7 @@ export function getScript(doctype, view = 'Form') {
 
           const instance = setupFormController(
             FormClass,
-            doctypeMeta,
+            doctypesMeta,
             document,
             parentInstance,
             isChildDoctype,
@@ -127,7 +127,7 @@ export function getScript(doctype, view = 'Form') {
     instance._isChildDoctype = isChildDoctype
 
     for (const key in document) {
-      if (document.hasOwnProperty(key)) {
+      if (Object.hasOwn(document, key)) {
         instance[key] = document[key]
       }
     }
@@ -275,6 +275,21 @@ export function getScript(doctype, view = 'Form') {
         },
       })
     }
+
+    if (typeof FormClass.prototype.setFieldHtml !== 'function') {
+      FormClass.prototype.setFieldHtml = function (fieldname, html) {
+        if (!this._originalDocumentContext) {
+          console.warn(
+            'CRM Script: _originalDocumentContext not found on instance for setFieldHtml.',
+          )
+          return
+        }
+        if (!this._originalDocumentContext.fieldHtmlMap) {
+          this._originalDocumentContext.fieldHtmlMap = {}
+        }
+        this._originalDocumentContext.fieldHtmlMap[fieldname] = html
+      }
+    }
   }
 
   // utility function to setup a form controller
@@ -361,7 +376,7 @@ export function getScript(doctype, view = 'Form') {
           if (!currentDocData) return false
           return prop in currentDocData
         },
-        ownKeys(target) {
+        ownKeys() {
           const currentDocData = getCurrentData()
           if (!currentDocData) return []
           return Reflect.ownKeys(currentDocData)

@@ -12,8 +12,8 @@
   </LayoutHeader>
   <div v-if="organization.doc" class="flex flex-col h-full overflow-hidden">
     <FileUploader
-      @success="changeOrganizationImage"
       :validateFile="validateIsImageFile"
+      @success="changeOrganizationImage"
     >
       <template #default="{ openFileSelector, error }">
         <div class="flex flex-col items-start justify-start gap-4 p-4">
@@ -34,13 +34,13 @@
                           {
                             icon: 'upload',
                             label: organization.doc.organization_logo
-                              ? __('Change image')
-                              : __('Upload image'),
+                              ? __('Change Image')
+                              : __('Upload Image'),
                             onClick: openFileSelector,
                           },
                           {
                             icon: 'trash-2',
-                            label: __('Remove image'),
+                            label: __('Remove Image'),
                             onClick: () => changeOrganizationImage(''),
                           },
                         ],
@@ -84,8 +84,8 @@
       </template>
     </FileUploader>
     <Tabs
-      as="div"
       v-model="tabIndex"
+      as="div"
       :tabs="tabs"
       class="flex flex-1 overflow-auto flex-col [&_[role='tablist']]:gap-7.5 [&_[role='tablist']]:px-4 [&_[role='tabpanel']:not([hidden])]:flex [&_[role='tabpanel']:not([hidden])]:grow"
     >
@@ -95,7 +95,7 @@
           class="group flex items-center gap-2 border-b border-transparent py-2.5 text-base text-ink-gray-5 duration-300 ease-in-out hover:text-ink-gray-9"
           :class="{ 'text-ink-gray-9': selected }"
         >
-          <component v-if="tab.icon" :is="tab.icon" class="h-5" />
+          <component :is="tab.icon" v-if="tab.icon" class="h-5" />
           {{ __(tab.label) }}
           <Badge
             class="group-hover:bg-surface-gray-7"
@@ -123,15 +123,15 @@
           </div>
         </div>
         <DealsListView
-          class="mt-4"
           v-if="tab.label === 'Deals' && rows.length"
+          class="mt-4"
           :rows="rows"
           :columns="columns"
           :options="{ selectable: false, showTooltip: false }"
         />
         <ContactsListView
-          class="mt-4"
           v-if="tab.label === 'Contacts' && rows.length"
+          class="mt-4"
           :rows="rows"
           :columns="columns"
           :options="{ selectable: false, showTooltip: false }"
@@ -186,14 +186,11 @@ import {
   createResource,
   toast,
 } from 'frappe-ui'
-import { h, computed, ref } from 'vue'
+import { h, computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const props = defineProps({
-  organizationId: {
-    type: String,
-    required: true,
-  },
+  organizationId: { type: String, required: true },
 })
 
 const { brand } = getSettings()
@@ -205,12 +202,17 @@ const { doctypeMeta } = getMeta('CRM Organization')
 const route = useRoute()
 const router = useRouter()
 
-const { document: organization, permissions } = useDocument(
-  'CRM Organization',
-  props.organizationId,
-)
+const {
+  document: organization,
+  permissions,
+  triggerOnRender,
+} = useDocument('CRM Organization', props.organizationId)
 
 const canDelete = computed(() => permissions.data?.permissions?.delete || false)
+
+onMounted(async () => {
+  if (organization.doc) await triggerOnRender()
+})
 
 const breadcrumbs = computed(() => {
   let items = [{ label: __('Organizations'), route: { name: 'Organizations' } }]
@@ -245,7 +247,7 @@ const breadcrumbs = computed(() => {
 })
 
 const title = computed(() => {
-  let t = doctypeMeta['CRM Organization']?.title_field || 'name'
+  let t = doctypeMeta.value?.title_field || 'name'
   return organization.doc?.[t] || props.organizationId
 })
 
@@ -268,7 +270,7 @@ async function changeOrganizationImage(file) {
 
 async function deleteOrganization() {
   $dialog({
-    title: __('Delete organization'),
+    title: __('Delete Organization'),
     message: __('Are you sure you want to delete this organization?'),
     actions: [
       {
@@ -290,7 +292,7 @@ async function deleteOrganization() {
 
 function openWebsite() {
   if (!organization.doc.website) {
-    toast.error(__('No website found'))
+    toast.error(__('No Website Found'))
     return
   }
 
@@ -394,8 +396,7 @@ const contacts = createListResource({
 })
 
 const rows = computed(() => {
-  let list = []
-  list = !tabIndex.value ? deals : contacts
+  let list = !tabIndex.value ? deals : contacts
 
   if (!list.data) return []
 
@@ -479,17 +480,17 @@ const dealColumns = [
     width: '12rem',
   },
   {
-    label: __('Mobile no'),
+    label: __('Mobile No.'),
     key: 'mobile_no',
     width: '11rem',
   },
   {
-    label: __('Deal owner'),
+    label: __('Deal Owner'),
     key: 'deal_owner',
     width: '10rem',
   },
   {
-    label: __('Last modified'),
+    label: __('Last Modified'),
     key: 'modified',
     width: '8rem',
   },
@@ -517,7 +518,7 @@ const contactColumns = [
     width: '12rem',
   },
   {
-    label: __('Last modified'),
+    label: __('Last Modified'),
     key: 'modified',
     width: '8rem',
   },
