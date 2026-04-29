@@ -310,9 +310,13 @@ def create_customer_in_erpnext(doc, method):
 
 	contacts = get_contacts(doc)
 	address = get_organization_address(doc.organization)
+	customer_group = None
+	if not erpnext_crm_settings.is_erpnext_in_different_site:
+		customer_group = frappe.db.get_single_value("Selling Settings", "customer_group")
+
 	customer_data = {
 		"customer_name": doc.organization,
-		"customer_group": "All Customer Groups",
+		"customer_group": customer_group,
 		"customer_type": "Company",
 		"territory": doc.territory,
 		"default_currency": doc.currency,
