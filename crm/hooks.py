@@ -128,13 +128,15 @@ before_uninstall = "crm.uninstall.before_uninstall"
 # -----------
 # Permissions evaluated in scripted ways
 
-# permission_query_conditions = {
-# "Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
-#
-# has_permission = {
-# "Event": "frappe.desk.doctype.event.event.has_permission",
-# }
+permission_query_conditions = {
+	"CRM Lead": "crm.permissions.org_hierarchy.get_lead_permission_query_conditions",
+	"CRM Deal": "crm.permissions.org_hierarchy.get_deal_permission_query_conditions",
+}
+
+has_permission = {
+	"CRM Lead": "crm.permissions.org_hierarchy.has_lead_permission",
+	"CRM Deal": "crm.permissions.org_hierarchy.has_deal_permission",
+}
 
 # DocType Class
 # ---------------
@@ -184,6 +186,13 @@ doc_events = {
 # ---------------
 
 scheduler_events = {
+	"all": ["crm.api.event.trigger_offset_event_notifications"],
+	"hourly": ["crm.api.event.trigger_hourly_event_notifications"],
+	"daily": [
+		"crm.api.event.trigger_daily_event_notifications",
+		"crm.fcrm.doctype.crm_view_settings.crm_view_settings.clear_old_versions",
+	],
+	"weekly": ["crm.api.event.trigger_weekly_event_notifications"],
 	"daily_long": ["crm.lead_syncing.background_sync.sync_leads_from_sources_daily"],
 	"hourly_long": ["crm.lead_syncing.background_sync.sync_leads_from_sources_hourly"],
 	"monthly_long": ["crm.lead_syncing.background_sync.sync_leads_from_sources_monthly"],

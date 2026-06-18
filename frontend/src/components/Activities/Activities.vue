@@ -62,7 +62,11 @@
                 <CommentIcon class="text-ink-gray-8" />
               </div>
             </div>
-            <CommentArea class="mb-4" :activity="comment" />
+            <CommentArea
+              class="mb-4"
+              :activity="comment"
+              @reload="all_activities.reload()"
+            />
           </div>
         </div>
       </div>
@@ -186,7 +190,10 @@
             :id="activity.name"
             class="mb-4"
           >
-            <CommentArea :activity="activity" />
+            <CommentArea
+              :activity="activity"
+              @reload="all_activities.reload()"
+            />
           </div>
           <div
             v-else-if="activity.activity_type == 'attachment_log'"
@@ -478,7 +485,7 @@ import FilesUploader from '@/components/FilesUploader/FilesUploader.vue'
 import { timeAgo, formatDate, startCase } from '@/utils'
 import { globalStore } from '@/stores/global'
 import { usersStore } from '@/stores/users'
-import { whatsappEnabled } from '@/composables/settings'
+import { whatsappEnabled } from '@/composables/whatsapp'
 import { useDocument } from '@/data/document'
 import { useTelemetry } from 'frappe-ui/frappe'
 import { Button, Tooltip, createResource, toast } from 'frappe-ui'
@@ -549,10 +556,18 @@ const whatsappMessages = createResource({
     reference_doctype: props.doctype,
     reference_name: props.docname,
   },
-  auto: whatsappEnabled.value,
+  auto: false,
   transform: (data) => sortByCreation(data),
   onSuccess: () => nextTick(() => scroll()),
 })
+
+watch(
+  whatsappEnabled,
+  (enabled) => {
+    if (enabled) whatsappMessages.fetch()
+  },
+  { immediate: true },
+)
 
 onBeforeUnmount(() => {
   $socket.off('whatsapp_message')
