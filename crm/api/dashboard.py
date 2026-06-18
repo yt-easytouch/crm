@@ -311,6 +311,68 @@ def get_won_deals(from_date: str | None = None, to_date: str | None = None, user
 	}
 
 
+def get_won_deal_value(
+	from_date: str | None = None, to_date: str | None = None, user: str | None = None
+):
+	"""
+	Get won deal value for the dashboard.
+	"""
+	diff = frappe.utils.date_diff(to_date, from_date)
+	if diff == 0:
+		diff = 1
+
+	prev_from_date = frappe.utils.add_days(from_date, -diff)
+	to_date_plus_one = frappe.utils.add_days(to_date, 1)
+
+	Deal = DocType("CRM Deal")
+	Status = DocType("CRM Deal Status")
+
+	# Build conditions for current period
+	current_cond = (
+		(Deal.closed_date >= from_date) & (Deal.closed_date < to_date_plus_one) & (Status.type == "Won")
+	)
+	if user:
+		current_cond = current_cond & (Deal.deal_owner == user)
+
+	# Build conditions for previous period
+	prev_cond = (Deal.closed_date >= prev_from_date) & (Deal.closed_date < from_date) & (Status.type == "Won")
+	if user:
+		prev_cond = prev_cond & (Deal.deal_owner == user)
+
+	# Calculate deal value with exchange rate
+	deal_value_expr = Deal.deal_value * IfNull(Deal.exchange_rate, 1)
+
+	# Build query with CASE expressions
+	query = (
+		frappe.qb.from_(Deal)
+		.join(Status)
+		.on(Deal.status == Status.name)
+		.select(
+			Sum(Case().when(current_cond, deal_value_expr).else_(0)).as_("current_month_value"),
+			Sum(Case().when(prev_cond, deal_value_expr).else_(0)).as_("prev_month_value"),
+		)
+	)
+
+	result = query.run(as_dict=True)
+
+	current_month_value = result[0].current_month_value or 0
+	prev_month_value = result[0].prev_month_value or 0
+
+	delta_in_percentage = (
+		(current_month_value - prev_month_value) / prev_month_value * 100 if prev_month_value else 0
+	)
+
+	return {
+		"title": _("Won deal value"),
+		"tooltip": _("Total deal value of won deals"),
+		"value": current_month_value,
+		"delta": delta_in_percentage,
+		"deltaSuffix": "%",
+		"prefix": get_base_currency_symbol(),
+	}
+
+
+
 def get_average_won_deal_value(
 	from_date: str | None = None, to_date: str | None = None, user: str | None = None
 ):
@@ -358,13 +420,18 @@ def get_average_won_deal_value(
 	current_month_avg_value = result[0].current_month_avg_value or 0
 	prev_month_avg_value = result[0].prev_month_avg_value or 0
 
-	avg_value_delta = current_month_avg_value - prev_month_avg_value if prev_month_avg_value else 0
+	avg_value_delta = (
+		(current_month_avg_value - prev_month_avg_value) / prev_month_avg_value * 100
+		if prev_month_avg_value
+		else 0
+	)
 
 	return {
 		"title": _("Avg. won deal value"),
 		"tooltip": _("Average deal value of won deals"),
 		"value": current_month_avg_value,
 		"delta": avg_value_delta,
+		"deltaSuffix": "%",
 		"prefix": get_base_currency_symbol(),
 	}
 
@@ -412,7 +479,9 @@ def get_average_deal_value(from_date: str | None = None, to_date: str | None = N
 	current_month_avg = result[0].current_month_avg or 0
 	prev_month_avg = result[0].prev_month_avg or 0
 
-	delta = current_month_avg - prev_month_avg if prev_month_avg else 0
+	delta = (
+		(current_month_avg - prev_month_avg) / prev_month_avg * 100 if prev_month_avg else 0
+	)
 
 	return {
 		"title": _("Avg. deal value"),
