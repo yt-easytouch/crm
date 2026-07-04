@@ -71,7 +71,7 @@
                   </component>
                 </div>
                 <div class="flex flex-col gap-2 truncate">
-                  <div class="truncate text-2xl font-medium text-ink-gray-9">
+                  <div class="truncate text-3xl-medium text-ink-gray-9">
                     <span>{{ organization.doc.name }}</span>
                   </div>
                   <div
@@ -95,7 +95,7 @@
                 />
                 <Button
                   :tooltip="__('Open Website')"
-                  icon="link"
+                  icon="lucide-link"
                   @click="openWebsite"
                 />
               </div>
@@ -130,8 +130,8 @@
           <component :is="tab.icon" v-if="tab.icon" class="h-5" />
           {{ __(tab.label) }}
           <Badge
-            class="group-hover:bg-surface-gray-7"
-            :class="[selected ? 'bg-surface-gray-7' : 'bg-gray-600']"
+            class="group-hover:bg-surface-gray-10"
+            :class="[selected ? 'bg-surface-gray-10' : 'bg-gray-600']"
             variant="solid"
             theme="gray"
             size="sm"
@@ -199,12 +199,11 @@ import { usersStore } from '@/stores/users'
 import { statusesStore } from '@/stores/statuses'
 import { getView } from '@/utils/view'
 import {
-  formatDate,
-  timeAgo,
   validateIsImageFile,
   setupCustomizations,
   openWebsite as openExternalWebsite,
 } from '@/utils'
+import { timestampCell } from '@/composables/useTimelinePreferences'
 import {
   Breadcrumbs,
   Avatar,
@@ -461,10 +460,7 @@ function getDealRowObject(deal) {
       label: deal.deal_owner && getUser(deal.deal_owner).full_name,
       ...(deal.deal_owner && getUser(deal.deal_owner)),
     },
-    modified: {
-      label: formatDate(deal.modified),
-      timeAgo: __(timeAgo(deal.modified)),
-    },
+    modified: timestampCell(deal.modified),
   }
 }
 
@@ -482,10 +478,7 @@ function getContactRowObject(contact) {
       label: contact.company_name,
       logo: organization.doc?.organization_logo,
     },
-    modified: {
-      label: formatDate(contact.modified),
-      timeAgo: __(timeAgo(contact.modified)),
-    },
+    modified: timestampCell(contact.modified),
   }
 }
 
