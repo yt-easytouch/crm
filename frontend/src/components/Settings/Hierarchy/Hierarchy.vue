@@ -331,7 +331,11 @@ function toggleEnable(currentlyEnabled) {
   } else {
     fcrmSettings.setValue.submit(
       { enable_sales_hierarchy: 1 },
-      { onSuccess: () => toast.success(__('Sales Hierarchy enabled')) },
+      {
+        onSuccess: () => {
+          toast.success(__('Sales Hierarchy enabled'))
+        },
+      },
     )
   }
 }
